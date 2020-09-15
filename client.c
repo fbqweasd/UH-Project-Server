@@ -53,16 +53,18 @@ int main(int argc, char *argv[]){
 		exit(0); 
 	}
     
-    fgets(input_data, BUF_LEN, stdin);
-    input_data[strlen(input_data)- 1] = '\0';
-        
-    if(ferror(stdin)){
-        perror("stdio");
-    }
+	while(1){
+		fgets(input_data, BUF_LEN, stdin);
+		input_data[strlen(input_data)- 1] = '\0';
+			
+		if(ferror(stdin)){
+			perror("stdio");
+		}
 
-    if(write(server_fd,input_data,strlen(input_data)) < 0){
-        perror("write");
-        exit(0);
-    }
+		if(write(server_fd,input_data,strlen(input_data)) < 0){
+			perror("write");
+			exit(0);
+		}
+	}
     return 0;
 }

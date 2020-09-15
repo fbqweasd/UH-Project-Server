@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/select.h>
+#include <pthread.h>
 
 #include <arpa/inet.h>
 
@@ -13,6 +14,41 @@
 
 static fd_set read_fds;
 static int fd_max = 0;
+pthread_t threads[5];
+
+struct thread_arg
+{
+    int sock;
+    struct sockaddr_in client_addr;
+    int thread_num;
+};
+
+
+void *thread_work(void *arg_data){
+    struct thread_arg* arg = (struct thread_arg *)arg_data ;
+    int temp_len;
+    char temp[514];
+
+    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, temp, sizeof(temp));
+    printf("Server : %s client connected. \n", temp);
+
+    while(1){
+        temp_len = read(arg->sock, temp, 512);
+        temp[temp_len] = '\0';
+
+        if(!strcasecmp(temp, "exit")){
+            close(arg->sock);
+            printf("Server : %s client close. \n", temp);
+            break;
+        }
+        printf("read data : %s\n", temp);
+    }
+
+   //  free(threads[arg->thread_num]);
+   // threads[arg->thread_num] = NULL;
+
+    pthread_exit(NULL);
+}
 
 int main(int argc, char *argv[]){
 
@@ -45,7 +81,6 @@ int main(int argc, char *argv[]){
 
     int newsockfd;
     struct sockaddr_in client_addr;
-    struct sockaddr_in6 client_addr6;
     fd_set tmp_fds;
     FD_ZERO(&tmp_fds);
     char temp[512];
@@ -68,13 +103,20 @@ int main(int argc, char *argv[]){
                 perror("Error in accept");
             }
             else{
-                inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, temp, sizeof(temp));
-		        printf("Server : %s client connected. \n", temp);
+                // thread work
+                struct thread_arg *arg;
+                arg = (struct thread_arg *)malloc(sizeof(struct thread_arg));
+                arg->client_addr = client_addr;
+                arg->sock = newsockfd;
 
-                temp_len = read(newsockfd, temp, 512);
-                temp[temp_len] = '\0';
-
-                printf("read data : %s\n", temp);
+                for(int i = 0; i < 5; i++){
+                    arg->thread_num = i;
+                    if(!threads[i]){
+                        pthread_create(&threads[i], NULL, &thread_work, (void *)arg);
+                        pthread_join(threads[i], NULL);
+                        break;
+                    }
+                }
             }
         }
     }
