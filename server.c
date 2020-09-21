@@ -28,9 +28,10 @@ void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
     int temp_len;
     char temp[514];
+    char clinet_data[514];
 
-    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, temp, sizeof(temp));
-    printf("Server : %s client connected. \n", temp);
+    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
+    printf("Server : %s client connected. \n", clinet_data);
 
     while(1){
         temp_len = read(arg->sock, temp, 512);
@@ -38,10 +39,10 @@ void *thread_work(void *arg_data){
 
         if(!strcasecmp(temp, "exit")){
             close(arg->sock);
-            printf("Server : %s client close. \n", temp);
+            printf("Server : %s client close. \n", clinet_data);
             break;
         }
-        printf("read data : %s\n", temp);
+        printf("%s : %s\n",clinet_data, temp);
     }
 
    //  free(threads[arg->thread_num]);
@@ -113,7 +114,8 @@ int main(int argc, char *argv[]){
                     arg->thread_num = i;
                     if(!threads[i]){
                         pthread_create(&threads[i], NULL, &thread_work, (void *)arg);
-                        pthread_join(threads[i], NULL);
+                        //pthread_join(threads[i], NULL);
+                         pthread_detach(threads[i]);
                         break;
                     }
                 }

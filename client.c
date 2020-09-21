@@ -65,6 +65,15 @@ int main(int argc, char *argv[]){
 			perror("write");
 			exit(0);
 		}
+
+		if(!strcasecmp("exit", input_data)){
+			break;
+		}
 	}
+	// if(write(server_fd,"exit",strlen("exit")) < 0){
+	// 	perror("end write");
+	// 	exit(0);
+	// }
+	close(server_fd);
     return 0;
 }
