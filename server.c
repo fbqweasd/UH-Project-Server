@@ -10,6 +10,8 @@
 
 #include <arpa/inet.h>
 
+#include "Data.h"
+
 #define SERVER_PORT 5656
 
 static fd_set read_fds;
@@ -27,22 +29,25 @@ struct thread_arg
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
     int temp_len;
-    char temp[514];
+    uint8_t temp[514];
     char clinet_data[514];
+    struct Data* receive_data;
 
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
     printf("Server : %s client connected. \n", clinet_data);
 
     while(1){
-        temp_len = read(arg->sock, temp, 512);
-        temp[temp_len] = '\0';
+        //temp_len = read(arg->sock, temp, 512);
+        memset(temp, 0, sizeof(struct Data));
+        temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
+        receive_data = (struct Data*)temp;
 
         if(!strcasecmp(temp, "exit")){
             close(arg->sock);
             printf("Server : %s client close. \n", clinet_data);
             break;
         }
-        printf("%s : %s\n",clinet_data, temp);
+        printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
     }
 
    //  free(threads[arg->thread_num]);

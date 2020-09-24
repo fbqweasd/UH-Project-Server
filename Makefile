@@ -2,9 +2,9 @@ CC = gcc
 PROGS = server client
 CFLAGS = -lpthread
 
-server : server.c
+server : server.c Data.h
 
-client : client.c
+client : client.c Data.h
 
 clean : 
 	rm -rf $(PROGS)

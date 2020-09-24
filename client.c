@@ -7,6 +7,8 @@
 
 #include <arpa/inet.h>
 
+#include "Data.h"
+
 #define BUF_LEN 514
 #define SERVER_PORT 5656
 
@@ -17,6 +19,8 @@ int main(int argc, char *argv[]){
 
 	char input_data[BUF_LEN];
 	int len, msg_size;
+
+	struct Data Send_Data;
 
     memset(&server_addr, 0x00, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
@@ -61,7 +65,10 @@ int main(int argc, char *argv[]){
 			perror("stdio");
 		}
 
-		if(write(server_fd,input_data,strlen(input_data)) < 0){
+		Send_Data.type = 1;
+		sprintf(Send_Data.data, "%s", input_data);
+
+		if(send(server_fd, &Send_Data, sizeof(Send_Data), 0) <= 0){
 			perror("write");
 			exit(0);
 		}
