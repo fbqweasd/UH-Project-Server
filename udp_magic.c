@@ -10,12 +10,15 @@
 #include "Data.h"
 
 #define BUF_LEN 514
-#define SERVER_PORT 5656
+#define SERVER_PORT 7
 
-typedef struct WOL_PACKET{
+#define MAC_ADDR_FMT "%02X:%02X:%02X:%02X:%02X:%02X"
+#define MAC_ADDR_FMT_ARGS(addr) addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+
+struct WOL_PACKET{
 	uint8_t Magic[6];
 	uint8_t MAC_ADDR[6 * 16];
-}
+};
 
 int main(int argc, char *argv[]){
     char buffer[BUF_LEN + 1];
@@ -23,7 +26,8 @@ int main(int argc, char *argv[]){
 	struct WOL_PACKET wol_packet;
 	int server_fd, n;
 	int i, j;
-	uint8_t *MAC_ADDR;
+	uint64_t MAC_ADDR = 0xF2FD21012211;
+	//uint64_t MAC_ADDR = 9223372036854775807;
 
 	int len, msg_size;
 	void *udp_ptr;
@@ -58,22 +62,40 @@ int main(int argc, char *argv[]){
 		exit(0);
 	}
 
-	strcpy(MAC_ADDR, "FFFFFFFF", 6);	
+	udp_ptr = &wol_packet;
+	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
+	udp_ptr += 6;
 
-	udp_ptr = &wol_packet
-	memset(udp_ptr, 0xFF, 8 * 6 ); // magic Packet Start bit
-	udp_ptr += 8 * 6;
+	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.Magic));
+	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+	//printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(MAC_ADDR));
 
 	for(i = 0; i < 16; i++){
-		for(j = 0; j < 6; j++){
-			memset(udp_ptr, htonl(MAC_ADDR[j]), 8 * 2 ); // magic Packet Start bit
-			udp_ptr += 8 * 2;
-		}
+		// MAC_ADDR
+		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF0000) >> 16, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
+
+		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
+		printf("%x\t", MAC_ADDR & 0xFF); 
+		printf("\n");
 	}
- 
-	if(sendto(server_fd, ,, (struct sockaddr *)&server_addr, sizeof(server_addr)){
-		perror("send");
-		exit(0);
+	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+
+	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
+	 	perror("send");
+	 	exit(0);
 	}
 
 	close(server_fd);
