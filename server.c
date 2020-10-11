@@ -16,10 +16,10 @@
 
 static fd_set read_fds;
 static int fd_max = 0;
-pthread_t threads[5];
+static pthread_t threads[5];
 
-char COMPUTER_IP[] = "192.168.150.8"
-int COMPUTER_MAC = 0xF2FD21012211;
+static char COMPUTER_IP[] = "192.168.150.8"
+static uint64_t COMPUTER_MAC = 0xF2FD21012211;
 
 struct thread_arg
 {
@@ -53,7 +53,7 @@ void *thread_work(void *arg_data){
         }
         printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
 
-        switch(receive_data.type){
+        switch(receive_data->type){
             case 1: // 유튜브
                 break;
             case 3 : // WOL 패킷 
