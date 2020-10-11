@@ -18,9 +18,6 @@ static fd_set read_fds;
 static int fd_max = 0;
 static pthread_t threads[5];
 
-static char COMPUTER_IP[] = "192.168.150.8"
-static uint64_t MAC_ADDR = 0xF2FD21012211;
-
 static struct thread_arg
 {
     int sock;
@@ -149,6 +146,9 @@ int WOL_PACK_SEND(){
 	struct WOL_PACKET wol_packet;
 	int server_fd;
 	int i, j;
+
+    char COMPUTER_IP[] = "192.168.150.8"
+    uint64_t MAC_ADDR = 0xF2FD21012211;
 
 	int len, msg_size;
 	void *udp_ptr;
