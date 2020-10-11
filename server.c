@@ -18,6 +18,9 @@ static fd_set read_fds;
 static int fd_max = 0;
 pthread_t threads[5];
 
+char COMPUTER_IP[] = "192.168.150.8"
+int COMPUTER_MAC = 0xF2FD21012211;
+
 struct thread_arg
 {
     int sock;
@@ -25,6 +28,7 @@ struct thread_arg
     int thread_num;
 };
 
+int WOL_PACK_SEND();
 
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
@@ -48,6 +52,14 @@ void *thread_work(void *arg_data){
             break;
         }
         printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
+
+        switch(receive_data.type){
+            case 1: // 유튜브
+                break;
+            case 3 : // WOL 패킷 
+                WOL_PACK_SEND();
+                break; 
+        }
     }
 
    //  free(threads[arg->thread_num]);
@@ -128,5 +140,67 @@ int main(int argc, char *argv[]){
         }
     }
 
+    return 0;
+}
+
+int WOL_PACK_SEND(){
+    char buffer[BUF_LEN + 1];
+    struct sockaddr_in server_addr;
+	struct WOL_PACKET wol_packet;
+	int server_fd;
+	int i, j;
+
+	int len, msg_size;
+	void *udp_ptr;
+
+    memset(&server_addr, 0x00, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+
+    server_addr.sin_addr.s_addr = inet_addr(COMPUTER_IP);
+	server_addr.sin_port = htons(7);
+
+    // 소켓 파일디스크립터 
+	if((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
+		perror("sock");
+		exit(0);
+	}
+
+	udp_ptr = &wol_packet;
+	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
+	udp_ptr += 6;
+
+	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.Magic));
+	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+	//printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(MAC_ADDR));
+
+	for(i = 0; i < 16; i++){
+		// MAC_ADDR
+		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF0000) >> 16, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
+
+		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
+		printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
+
+		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
+		printf("%x\t", MAC_ADDR & 0xFF); 
+		printf("\n");
+	}
+	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+
+	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
+	 	perror("send");
+	 	exit(0);
+	}
+
+	close(server_fd);
     return 0;
 }
