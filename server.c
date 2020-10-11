@@ -18,7 +18,7 @@ static fd_set read_fds;
 static int fd_max = 0;
 static pthread_t threads[5];
 
-static struct thread_arg
+struct thread_arg
 {
     int sock;
     struct sockaddr_in client_addr;
@@ -147,7 +147,7 @@ int WOL_PACK_SEND(){
 	int server_fd;
 	int i, j;
 
-    char COMPUTER_IP[] = "192.168.150.8"
+    char COMPUTER_IP[] = "192.168.150.8";
     uint64_t MAC_ADDR = 0xF2FD21012211;
 
 	int len, msg_size;
