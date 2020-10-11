@@ -175,23 +175,23 @@ int WOL_PACK_SEND(){
 
 	for(i = 0; i < 16; i++){
 		// MAC_ADDR
-		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
+		memset(udp_ptr++, (COMPUTER_MAC & 0xFF0000000000) >> 40, 1);
+		printf("%x\t", (COMPUTER_MAC & 0xFF0000000000) >> 40);
 
-		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
+		memset(udp_ptr++, (COMPUTER_MAC & 0xFF00000000) >> 32, 1);
+		printf("%x\t", (COMPUTER_MAC & 0xFF00000000) >> 32);
 
-		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
+		memset(udp_ptr++, (COMPUTER_MAC & 0xFF000000) >> 24, 1);
+		printf("%x\t", (COMPUTER_MAC & 0xFF000000) >> 24);
 
-		memset(udp_ptr++, (MAC_ADDR & 0xFF0000) >> 16, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
+		memset(udp_ptr++, (COMPUTER_MAC & 0xFF0000) >> 16, 1);
+		printf("%x\t", (COMPUTER_MAC & 0xFF0000) >> 16);
 
-		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
+		memset(udp_ptr++, (COMPUTER_MAC & 0xFF00) >> 8, 1);
+		printf("%x\t", (COMPUTER_MAC & 0xFF00) >> 8);
 
-		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
-		printf("%x\t", MAC_ADDR & 0xFF); 
+		memset(udp_ptr++, COMPUTER_MAC & 0xFF, 1);
+		printf("%x\t", COMPUTER_MAC & 0xFF); 
 		printf("\n");
 	}
 	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));

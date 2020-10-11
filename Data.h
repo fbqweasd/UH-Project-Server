@@ -3,6 +3,8 @@
 #define MAC_ADDR_FMT "%02X:%02X:%02X:%02X:%02X:%02X"
 #define MAC_ADDR_FMT_ARGS(addr) addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
+#define BUF_LEN 1024
+
 struct Data
 {
     uint8_t type;
