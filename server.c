@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 
@@ -26,6 +27,7 @@ struct thread_arg
 };
 
 int WOL_PACK_SEND();
+int listenfd;
 
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
@@ -65,10 +67,17 @@ void *thread_work(void *arg_data){
     pthread_exit(NULL);
 }
 
+void sigint_handler(){
+    fprintf(stdout, "-- SIGINT 종료 --\n");
+    close(listenfd);
+    exit(0);
+}
+
 int main(int argc, char *argv[]){
 
-    int listenfd;
     struct sockaddr_in serv_addr;
+
+    signal(SIGINT, sigint_handler);
 
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
     if(listenfd < 0){
@@ -147,17 +156,18 @@ int WOL_PACK_SEND(){
 	int server_fd;
 	int i, j;
 
-    char COMPUTER_IP[] = "192.168.150.8";
-    uint64_t MAC_ADDR = 0xF2FD21012211;
+    char COMPUTER_IP[] = "192.168.150.255";
+    //uint64_t MAC_ADDR = 0xF2FD21012211;
+    uint64_t MAC_ADDR = 0x00D861C36D40;
 
 	int len, msg_size;
 	void *udp_ptr;
 
     memset(&server_addr, 0x00, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
+    server_addr.sin_family = AF_INET;
 
     server_addr.sin_addr.s_addr = inet_addr(COMPUTER_IP);
-	server_addr.sin_port = htons(7);
+    server_addr.sin_port = htons(7);
 
     // 소켓 파일디스크립터 
 	if((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
@@ -165,13 +175,16 @@ int WOL_PACK_SEND(){
 		exit(0);
 	}
 
+	int broadcastEnable=1;
+	int ret=setsockopt(server_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+
 	udp_ptr = &wol_packet;
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
 	udp_ptr += 6;
 
 	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.Magic));
 	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
-	//printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(MAC_ADDR));
+	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(MAC_ADDR));
 
 	for(i = 0; i < 16; i++){
 		// MAC_ADDR
