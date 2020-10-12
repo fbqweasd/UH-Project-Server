@@ -198,7 +198,7 @@ int WOL_PACK_SEND(){
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
-	 	exit(0);
+	 	//exit(0);
 	}
 
 	close(server_fd);
