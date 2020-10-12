@@ -12,7 +12,7 @@
 
 #include "Data.h"
 
-#define SERVER_PORT 5656
+#define SERVER_PORT 5657
 
 static fd_set read_fds;
 static int fd_max = 0;
@@ -53,7 +53,7 @@ void *thread_work(void *arg_data){
         switch(receive_data->type){
             case 1: // 유튜브
                 break;
-            case 3 : // WOL 패킷 
+            case 4 : // WOL 패킷 
                 WOL_PACK_SEND();
                 break; 
         }
