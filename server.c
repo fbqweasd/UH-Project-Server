@@ -29,6 +29,7 @@ struct thread_arg
 int WOL_PACK_SEND();
 
 void *thread_work(void *arg_data);
+void Send_TCP(struct Data* data);
 
 void sigint_handler(){
     
@@ -111,7 +112,7 @@ int main(int argc, char *argv[]){
                     if(!threads[i]){
                         pthread_create(&threads[i], NULL, &thread_work, (void *)arg);
                         //pthread_join(threads[i], NULL);
-                         pthread_detach(threads[i]);
+                        pthread_detach(threads[i]);
                         break;
                     }
                 }
@@ -150,7 +151,11 @@ void *thread_work(void *arg_data){
             case 1: // 유튜브
                 break;
             case 4 : // WOL 패킷 
-                WOL_PACK_SEND();
+                if(strcmp(receive_data->data, "WOL")){
+                    WOL_PACK_SEND();
+                }
+
+
                 break; 
         }
     }
@@ -228,4 +233,13 @@ int WOL_PACK_SEND(){
 
 	close(server_fd);
     return 0;
+}
+
+/**
+ * @brief 컴퓨터로 TCP 데이터를 전송하는 함수
+ * 
+ * @param data 
+ */
+void Send_TCP(struct Data* data){
+
 }
