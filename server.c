@@ -40,6 +40,7 @@ void sigint_handler(){
         if(threads[i]){
             fprintf(stdout, "%d thread cancel\n",i);
             pthread_cancel(threads[i]);
+	    pthread_join(threads[i], NULL);
         }
     }
 
@@ -145,6 +146,12 @@ void *thread_work(void *arg_data){
             printf("Server : %s client close. \n", clinet_data);
             break;
         }
+
+	if(!temp){
+	    fprintf(stderr, "Sock Error\n");
+	    pthread_exit(NULL);
+	}
+
         printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
 
         switch(receive_data->type){
@@ -154,12 +161,9 @@ void *thread_work(void *arg_data){
                 if(strcmp(receive_data->data, "WOL")){
                     WOL_PACK_SEND();
                 }
-
-
                 break; 
         }
     }
-
    //free(threads[arg->thread_num]);
    //threads[arg->thread_num] = NULL;
 
