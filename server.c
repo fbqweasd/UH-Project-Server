@@ -8,7 +8,6 @@
 #include <sys/select.h>
 #include <pthread.h>
 #include <signal.h>
-
 #include <arpa/inet.h>
 
 #include "Data.h"
@@ -18,6 +17,7 @@
 static fd_set read_fds;
 static int fd_max = 0;
 static pthread_t threads[5];
+int listenfd;
 
 struct thread_arg
 {
@@ -27,48 +27,21 @@ struct thread_arg
 };
 
 int WOL_PACK_SEND();
-int listenfd;
 
-void *thread_work(void *arg_data){
-    struct thread_arg* arg = (struct thread_arg *)arg_data ;
-    int temp_len;
-    uint8_t temp[514];
-    char clinet_data[514];
-    struct Data* receive_data;
+void *thread_work(void *arg_data);
 
-    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
-    printf("Server : %s client connected. \n", clinet_data);
+void sigint_handler(){
+    
+    int i;
+    fprintf(stdout, "-- SIGINT 종료 --\n");
 
-    while(1){
-        //temp_len = read(arg->sock, temp, 512);
-        memset(temp, 0, sizeof(struct Data));
-        temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
-        receive_data = (struct Data*)temp;
-
-        if(!strcasecmp(temp, "exit")){
-            close(arg->sock);
-            printf("Server : %s client close. \n", clinet_data);
-            break;
-        }
-        printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
-
-        switch(receive_data->type){
-            case 1: // 유튜브
-                break;
-            case 4 : // WOL 패킷 
-                WOL_PACK_SEND();
-                break; 
+    for(i=0 ;i<5; i++){
+        if(threads[i]){
+            fprintf(stdout, "%d thread cancel\n",i);
+            pthread_cancel(threads[i]);
         }
     }
 
-   //  free(threads[arg->thread_num]);
-   // threads[arg->thread_num] = NULL;
-
-    pthread_exit(NULL);
-}
-
-void sigint_handler(){
-    fprintf(stdout, "-- SIGINT 종료 --\n");
     close(listenfd);
     exit(0);
 }
@@ -147,6 +120,45 @@ int main(int argc, char *argv[]){
     }
 
     return 0;
+}
+
+
+void *thread_work(void *arg_data){
+    struct thread_arg* arg = (struct thread_arg *)arg_data ;
+    int temp_len;
+    uint8_t temp[514];
+    char clinet_data[514];
+    struct Data* receive_data;
+
+    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
+    printf("Server : %s client connected. \n", clinet_data);
+
+    while(1){
+        //temp_len = read(arg->sock, temp, 512);
+        memset(temp, 0, sizeof(struct Data));
+        temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
+        receive_data = (struct Data*)temp;
+
+        if(!strcasecmp(temp, "exit")){
+            close(arg->sock);
+            printf("Server : %s client close. \n", clinet_data);
+            break;
+        }
+        printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
+
+        switch(receive_data->type){
+            case 1: // 유튜브
+                break;
+            case 4 : // WOL 패킷 
+                WOL_PACK_SEND();
+                break; 
+        }
+    }
+
+   //free(threads[arg->thread_num]);
+   //threads[arg->thread_num] = NULL;
+
+    pthread_exit(NULL);
 }
 
 int WOL_PACK_SEND(){
