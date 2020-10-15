@@ -34,7 +34,8 @@ void Send_TCP(struct Data* data);
 void sigint_handler(){
     
     int i;
-    fprintf(stdout, "-- SIGINT 종료 --\n");
+    //fprintf(stdout, "-- SIGINT 종료 --\n");
+    fprintf(stdout, "-- signal 입력으로 종료 --\n");
 
     for(i=0 ;i<5; i++){
         if(threads[i]){
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
 
     signal(SIGINT, sigint_handler);
+    signal(SIGKILL, sigint_handler);
 
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
     if(listenfd < 0){
@@ -135,7 +137,6 @@ void *thread_work(void *arg_data){
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
     printf("Server : %s client connected. \n", clinet_data);
 
-    while(1){
         //temp_len = read(arg->sock, temp, 512);
         memset(temp, 0, sizeof(struct Data));
         temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
@@ -144,7 +145,6 @@ void *thread_work(void *arg_data){
         if(!strcasecmp(temp, "exit")){
             close(arg->sock);
             printf("Server : %s client close. \n", clinet_data);
-            break;
         }
 
 	if(!temp){
@@ -157,7 +157,6 @@ void *thread_work(void *arg_data){
         switch(receive_data->type){
 	    case 0 : // Sock Error
 	    	fprintf(stderr, "Sock Error\n");
-	    	pthread_exit(NULL);
 		break;
             case 1: // 유튜브
                 break;
@@ -167,10 +166,9 @@ void *thread_work(void *arg_data){
                 }
                 break; 
         }
-    }
    //free(threads[arg->thread_num]);
    //threads[arg->thread_num] = NULL;
-
+    close(arg->sock);
     pthread_exit(NULL);
 }
 
