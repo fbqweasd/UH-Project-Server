@@ -155,6 +155,10 @@ void *thread_work(void *arg_data){
         printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
 
         switch(receive_data->type){
+	    case 0 : // Sock Error
+	    	fprintf(stderr, "Sock Error\n");
+	    	pthread_exit(NULL);
+		break;
             case 1: // 유튜브
                 break;
             case 4 : // WOL 패킷 
