@@ -168,6 +168,7 @@ void *thread_work(void *arg_data){
         }
    //free(threads[arg->thread_num]);
    //threads[arg->thread_num] = NULL;
+    threads[arg->thread_num] = NULL;
     close(arg->sock);
     pthread_exit(NULL);
 }
