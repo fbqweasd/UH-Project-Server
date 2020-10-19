@@ -36,10 +36,13 @@ void sigint_handler(){
     int i;
     //fprintf(stdout, "-- SIGINT 종료 --\n");
     fprintf(stdout, "-- signal 입력으로 종료 --\n");
+    fflush(stdout);
 
     for(i=0 ;i<5; i++){
         if(threads[i]){
             fprintf(stdout, "%d thread cancel\n",i);
+    	    fflush(stdout);
+
             pthread_cancel(threads[i]);
 	    pthread_join(threads[i], NULL);
         }
@@ -59,6 +62,7 @@ int main(int argc, char *argv[]){
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
     if(listenfd < 0){
         fprintf(stderr, "listener socket create Error");
+    fflush(stdout);
     }
 
     memset(&serv_addr, 0, sizeof(serv_addr));
@@ -88,6 +92,7 @@ int main(int argc, char *argv[]){
     int temp_len;
 
     fprintf(stdout, "-- 소켓 생성 완료 --\n");
+    fflush(stdout);
 
     while(1){
         tmp_fds = read_fds;
@@ -135,7 +140,8 @@ void *thread_work(void *arg_data){
     struct Data* receive_data;
 
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
-    printf("Server : %s client connected. \n", clinet_data);
+    fprintf(stderr, "Server : %s client connected. \n", clinet_data);
+    fflush(stderr);
 
         //temp_len = read(arg->sock, temp, 512);
         memset(temp, 0, sizeof(struct Data));
@@ -144,11 +150,13 @@ void *thread_work(void *arg_data){
 
         if(!strcasecmp(temp, "exit")){
             close(arg->sock);
-            printf("Server : %s client close. \n", clinet_data);
+            fprintf(stderr, "Server : %s client close. \n", clinet_data);
+    	    fflush(stderr);
         }
 
 	if(!temp){
 	    fprintf(stderr, "Sock Error\n");
+    	    fflush(stderr);
 	    pthread_exit(NULL);
 	}
 
@@ -157,18 +165,19 @@ void *thread_work(void *arg_data){
         switch(receive_data->type){
 	    case 0 : // Sock Error
 	    	fprintf(stderr, "Sock Error\n");
+    		fflush(stderr);
 		break;
             case 1: // 유튜브
                 break;
             case 4 : // WOL 패킷 
-                if(strcmp(receive_data->data, "WOL")){
+                if(!strcmp(receive_data->data, "WOL")){
                     WOL_PACK_SEND();
                 }
                 break; 
         }
    //free(threads[arg->thread_num]);
    //threads[arg->thread_num] = NULL;
-    threads[arg->thread_num] = NULL;
+    //threads[arg->thread_num] = NULL;
     close(arg->sock);
     pthread_exit(NULL);
 }
@@ -184,8 +193,8 @@ int WOL_PACK_SEND(){
     //uint64_t MAC_ADDR = 0xF2FD21012211;
     uint64_t MAC_ADDR = 0x00D861C36D40;
 
-	int len, msg_size;
-	void *udp_ptr;
+    int len, msg_size;
+    void *udp_ptr;
 
     memset(&server_addr, 0x00, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -231,7 +240,9 @@ int WOL_PACK_SEND(){
 		printf("%x\t", MAC_ADDR & 0xFF); 
 		printf("\n");
 	}
-	printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+
+	fprintf(stderr, "Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+	fflush(stderr);
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
