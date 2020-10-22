@@ -4,7 +4,7 @@ CFLAGS = -lpthread
 
 all: $(PROGS)
 
-server : server.c Data.h
+uh_server : server.c Data.h
 
 #client : client.c Data.h
 
