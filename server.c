@@ -269,7 +269,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
     //uint64_t MAC_ADDR = 0xF2FD21012211;
     uint64_t MAC_ADDR = 0x00D861C36D40;
 
-    if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
+    if(mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
         MAC_ADDR = mac_arg;
     }
 
