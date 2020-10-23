@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 
 #include "Data.h"
+#include "log.h"
 
 #define SERVER_PORT 5657
 
@@ -26,7 +27,7 @@ struct thread_arg
     int thread_num;
 };
 
-int WOL_PACK_SEND();
+int WOL_PACK_SEND(uint64_t mac_arg);
 
 void *thread_work(void *arg_data);
 void Send_TCP(struct Data* data);
@@ -59,10 +60,19 @@ int main(int argc, char *argv[]){
     signal(SIGINT, sigint_handler);
     signal(SIGKILL, sigint_handler);
 
+    // *** Logging  설정 부분 ***
+    Logging_init(TERMINAL, 3);
+	
+	if(Logging_file_set("./UH-Server.log")){
+		fprintf(stderr, "Log file open Error\n");
+		return 1;
+	}
+    // *** 설정 종료 ***
+
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
     if(listenfd < 0){
-        fprintf(stderr, "listener socket create Error");
-    fflush(stdout);
+        Logging_out(SYSTEM, "listener socket create Error");
+        exit(EXIT_FAILURE);
     }
 
     memset(&serv_addr, 0, sizeof(serv_addr));
@@ -91,8 +101,7 @@ int main(int argc, char *argv[]){
     char temp[512];
     int temp_len;
 
-    fprintf(stdout, "-- 소켓 생성 완료 --\n");
-    fflush(stdout);
+    Logging_out(SYSTEM, "-- 소켓 생성 완료 --");
 
     while(1){
         tmp_fds = read_fds;
@@ -140,8 +149,7 @@ void *thread_work(void *arg_data){
     struct Data* receive_data;
 
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
-    fprintf(stderr, "Server : %s client connected. \n", clinet_data);
-    fflush(stderr);
+    Logging_out(INFO, "Server : %s client connected.", clinet_data);
 
         //temp_len = read(arg->sock, temp, 512);
         memset(temp, 0, sizeof(struct Data));
@@ -150,39 +158,34 @@ void *thread_work(void *arg_data){
 
         if(!strcasecmp(temp, "exit")){
             close(arg->sock);
-            fprintf(stderr, "Server : %s client close. \n", clinet_data);
-    	    fflush(stderr);
+            Logging_out(INFO, "Server : %s client close.", clinet_data);
         }
 
 	if(!temp){
-	    fprintf(stderr, "Sock Error\n");
-    	    fflush(stderr);
+        Logging_out(INFO, "Sock Error");
 	    pthread_exit(NULL);
 	}
 
-        printf("%s  %d : %s\n",clinet_data, receive_data->type, receive_data->data);
+    Logging_out(INFO, "%s  %d : %s",clinet_data, receive_data->type, receive_data->data);
 
-        switch(receive_data->type){
-	    case 0 : // Sock Error
-	    	fprintf(stderr, "Sock Error\n");
-    		fflush(stderr);
-		break;
-            case 1: // 유튜브
-                break;
-            case 4 : // WOL 패킷 
-                if(!strcmp(receive_data->data, "WOL")){
-                    WOL_PACK_SEND();
-                }
-                break; 
-        }
-   //free(threads[arg->thread_num]);
-   //threads[arg->thread_num] = NULL;
-    //threads[arg->thread_num] = NULL;
+    switch(receive_data->type){
+        case 0 : // Sock Error
+            Logging_out(INFO, "input packet Error");
+            break;
+        case 1: // 유튜브
+            break;
+        case 4 : // WOL 패킷 
+            if(!strcmp(receive_data->data, "WOL")){
+                WOL_PACK_SEND(0); // 인자값은 MAC 주소의 값, NULL 로 넣을시 기본값
+            }
+            break; 
+    }
+
     close(arg->sock);
     pthread_exit(NULL);
 }
 
-int WOL_PACK_SEND(){
+int WOL_PACK_SEND(uint64_t mac_arg){
     char buffer[BUF_LEN + 1];
     struct sockaddr_in server_addr;
 	struct WOL_PACKET wol_packet;
@@ -192,6 +195,10 @@ int WOL_PACK_SEND(){
     char COMPUTER_IP[] = "192.168.150.255";
     //uint64_t MAC_ADDR = 0xF2FD21012211;
     uint64_t MAC_ADDR = 0x00D861C36D40;
+
+    if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
+        MAC_ADDR = mac_arg;
+    }
 
     int len, msg_size;
     void *udp_ptr;
@@ -222,31 +229,29 @@ int WOL_PACK_SEND(){
 	for(i = 0; i < 16; i++){
 		// MAC_ADDR
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
+		//printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
 
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
+		//printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
 
 		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
+		//printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
 
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000) >> 16, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
+		//printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
 
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
-		printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
+		//printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
 
 		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
-		printf("%x\t", MAC_ADDR & 0xFF); 
-		printf("\n");
+		//printf("%x\t", MAC_ADDR & 0xFF); 
+		//printf("\n");
 	}
 
-	fprintf(stderr, "Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
-	fflush(stderr);
+    Logging_out(INFO, "Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
-	 	//exit(0);
 	}
 
 	close(server_fd);
