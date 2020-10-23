@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <signal.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "Data.h"
 #include "log.h"
@@ -19,6 +21,7 @@ static fd_set read_fds;
 static int fd_max = 0;
 static pthread_t threads[5];
 int listenfd;
+static int daemon_flag;
 
 struct thread_arg
 {
@@ -32,20 +35,50 @@ int WOL_PACK_SEND(uint64_t mac_arg);
 void *thread_work(void *arg_data);
 void Send_TCP(struct Data* data);
 
+static void usage(char *progname)
+{
+    fprintf(stderr, "Usage: %s [options]\n", progname);
+    fprintf(stderr, "\nWhere \"options\" are:\n");
+
+    fprintf(stderr,
+            "	-d daemon		Start Daemon mode\n"
+            );
+    return;
+}
+
+/* Parses the command line arguments for the server */
+static int parse_options(char *progname, int argc, char *argv[])
+{
+    int opt;
+    if (argc > 2) {
+        fprintf(stderr, "Wrong number of arguments for %s\n", progname);
+        return 1;
+    }
+
+    while ((opt = getopt(argc, argv, "d")) != -1) {
+        switch (opt) {
+        case 'd':
+            daemon_flag = 1;
+            break;
+        default:
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 void sigint_handler(){
     
     int i;
-    //fprintf(stdout, "-- SIGINT 종료 --\n");
-    fprintf(stdout, "-- signal 입력으로 종료 --\n");
-    fflush(stdout);
+    Logging_out(SYSTEM, "-- signal 입력으로 종료--");
 
     for(i=0 ;i<5; i++){
         if(threads[i]){
-            fprintf(stdout, "%d thread cancel\n",i);
-    	    fflush(stdout);
-
+            Logging_out(SYSTEM, "%d thread cancel\n", i);
+    	
             pthread_cancel(threads[i]);
-	    pthread_join(threads[i], NULL);
+	        pthread_join(threads[i], NULL);
         }
     }
 
@@ -56,12 +89,52 @@ void sigint_handler(){
 int main(int argc, char *argv[]){
 
     struct sockaddr_in serv_addr;
+    
+    char *progname = NULL;
+    progname = (progname == strrchr(argv[0], '/')) ? progname + 1 : *argv;
+
+    if (parse_options(progname, argc, argv)) {
+        usage(progname);
+        exit(EXIT_FAILURE);
+    }
+
+    if(daemon_flag){ // 데몬 실행
+        pid_t pid;
+        pid = fork();
+ 
+        if(pid == -1){
+            fprintf(stderr, "daemon fork error\n");	
+            return -1; 
+        } 
+
+        if(pid != 0){
+            exit(EXIT_SUCCESS);
+        }
+        
+        if(setsid() == -1){
+            return -1; 
+        }
+        // if(chdir("/") == -1){
+        //     //printf("chdir()\n");
+        //     return -1;
+        // }
+
+        open("/dev/null", O_RDWR);
+        dup(0);
+        dup(0);
+
+        Logging_init(DAEMON, 3);
+    }
+    else{
+        Logging_init(TERMINAL, 3);
+    }
+
 
     signal(SIGINT, sigint_handler);
     signal(SIGKILL, sigint_handler);
 
     // *** Logging  설정 부분 ***
-    Logging_init(TERMINAL, 3);
+    //Logging_init(TERMINAL, 3);
 	
 	if(Logging_file_set("./UH-Server.log")){
 		fprintf(stderr, "Log file open Error\n");
