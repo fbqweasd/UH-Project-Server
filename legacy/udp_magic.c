@@ -9,16 +9,10 @@
 
 #include "Data.h"
 
-#define BUF_LEN 514
 #define SERVER_PORT 7
 
 #define MAC_ADDR_FMT "%02X:%02X:%02X:%02X:%02X:%02X"
 #define MAC_ADDR_FMT_ARGS(addr) addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
-
-struct WOL_PACKET{
-	uint8_t Magic[6];
-	uint8_t MAC_ADDR[6 * 16];
-};
 
 int main(int argc, char *argv[]){
     char buffer[BUF_LEN + 1];
@@ -26,8 +20,7 @@ int main(int argc, char *argv[]){
 	struct WOL_PACKET wol_packet;
 	int server_fd, n;
 	int i, j;
-	uint64_t MAC_ADDR = 0xF2FD21012211;
-	//uint64_t MAC_ADDR = 9223372036854775807;
+	uint64_t MAC_ADDR = 0x00D861C36D40;
 
 	int len, msg_size;
 	void *udp_ptr;
@@ -38,7 +31,7 @@ int main(int argc, char *argv[]){
     // 입력 인자 값으로 서버 설정
 	if(argc <= 1){
 		printf("---- 기본 서버 주소로 설정 됨 ----\n");
-		server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		server_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
 		server_addr.sin_port = htons(SERVER_PORT);
 	}
 	else if(argc == 2){
@@ -61,6 +54,9 @@ int main(int argc, char *argv[]){
 		perror("sock");
 		exit(0);
 	}
+
+	int broadcastEnable=1;
+	int ret=setsockopt(server_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 
 	udp_ptr = &wol_packet;
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
