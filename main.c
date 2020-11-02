@@ -214,7 +214,6 @@ int main(int argc, char *argv[]){
 
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
-    int temp_len;
     uint8_t temp[514];
     char clinet_data[514];
     struct Data* receive_data;
@@ -223,7 +222,7 @@ void *thread_work(void *arg_data){
     Logging_out(INFO, "Server : %s client connected.", clinet_data);
 
     memset(temp, 0, sizeof(struct Data));
-    temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
+    recv(arg->sock, temp, sizeof(struct Data), 0);
     receive_data = (struct Data*)temp;
 
     Logging_out(INFO, "%s  %d : %s",clinet_data, receive_data->type, receive_data->data);
