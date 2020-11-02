@@ -118,10 +118,6 @@ int main(int argc, char *argv[]){
         if(setsid() == -1){
             return -1; 
         }
-        // if(chdir("/") == -1){
-        //     //printf("chdir()\n");
-        //     return -1;
-        // }
 
         open("/dev/null", O_RDWR);
         dup(0);
@@ -226,10 +222,9 @@ void *thread_work(void *arg_data){
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
     Logging_out(INFO, "Server : %s client connected.", clinet_data);
 
-        //temp_len = read(arg->sock, temp, 512);
-        memset(temp, 0, sizeof(struct Data));
-        temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
-        receive_data = (struct Data*)temp;
+    memset(temp, 0, sizeof(struct Data));
+    temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
+    receive_data = (struct Data*)temp;
 
     Logging_out(INFO, "%s  %d : %s",clinet_data, receive_data->type, receive_data->data);
 
@@ -286,10 +281,6 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
 	udp_ptr += 6;
 
-	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.Magic));
-	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
-	// printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(MAC_ADDR));
-
 	for(i = 0; i < 16; i++){
 		// MAC_ADDR
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
@@ -312,7 +303,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 		//printf("\n");
 	}
 
-    Logging_out(INFO, "Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+    Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
