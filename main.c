@@ -1,16 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <string.h>
+
+#include <signal.h>
+#include <pthread.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/select.h>
-#include <pthread.h>
-#include <signal.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include <getopt.h>
 
 #include "Data.h"
 #include "log.h"
@@ -171,8 +175,6 @@ int main(int argc, char *argv[]){
     struct sockaddr_in client_addr;
     fd_set tmp_fds;
     FD_ZERO(&tmp_fds);
-    char temp[512];
-    int temp_len;
 
     Logging_out(SYSTEM, "-- 소켓 생성 완료 --");
 
@@ -229,21 +231,13 @@ void *thread_work(void *arg_data){
         temp_len = recv(arg->sock, temp, sizeof(struct Data), 0);
         receive_data = (struct Data*)temp;
 
-        if(!strcasecmp(temp, "exit")){
-            close(arg->sock);
-            Logging_out(INFO, "Server : %s client close.", clinet_data);
-        }
-
-	if(!temp){
-        Logging_out(INFO, "Sock Error");
-	    pthread_exit(NULL);
-	}
-
     Logging_out(INFO, "%s  %d : %s",clinet_data, receive_data->type, receive_data->data);
 
     switch(receive_data->type){
         case 0 : // Sock Error
-            Logging_out(INFO, "input packet Error");
+            //Logging_out(INFO, "input packet Error");
+            close(arg->sock);
+            Logging_out(INFO, "Server : %s client close.", clinet_data);
             break;
         case 1: // 유튜브
             break;
@@ -259,21 +253,18 @@ void *thread_work(void *arg_data){
 }
 
 int WOL_PACK_SEND(uint64_t mac_arg){
-    char buffer[BUF_LEN + 1];
     struct sockaddr_in server_addr;
 	struct WOL_PACKET wol_packet;
 	int server_fd;
-	int i, j;
+	int i;
 
     char COMPUTER_IP[] = "192.168.150.255";
-    //uint64_t MAC_ADDR = 0xF2FD21012211;
     uint64_t MAC_ADDR = 0x00D861C36D40;
 
     if(mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
         MAC_ADDR = mac_arg;
     }
 
-    int len, msg_size;
     void *udp_ptr;
 
     memset(&server_addr, 0x00, sizeof(server_addr));
@@ -289,7 +280,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 	}
 
 	int broadcastEnable=1;
-	int ret=setsockopt(server_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+	setsockopt(server_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 
 	udp_ptr = &wol_packet;
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
@@ -329,13 +320,4 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 
 	close(server_fd);
     return 0;
-}
-
-/**
- * @brief 컴퓨터로 TCP 데이터를 전송하는 함수
- * 
- * @param data 
- */
-void Send_TCP(struct Data* data){
-
 }
