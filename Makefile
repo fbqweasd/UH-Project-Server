@@ -5,9 +5,8 @@ CFLAGS = -lpthread
 
 all: $(PROGS)
 
-server : server.c Data.h log.c
-
-#client : client.c Data.h
+server : main.c Data.h log.c
+	$(CC) -o #@ #^ $(CFLAGS)
 
 clean : 
 	rm -rf $(PROGS)
