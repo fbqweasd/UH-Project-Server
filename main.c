@@ -239,6 +239,11 @@ void *thread_work(void *arg_data){
             if(!strcmp(receive_data->data, "WOL")){
                 WOL_PACK_SEND(0); // 인자값은 MAC 주소의 값, NULL 로 넣을시 기본값
             }
+
+	    if(send(arg->sock, receive_data,sizeof(struct Data), 0) == -1){
+            	Logging_out(ERROR, "%s WOL sock Error", clinet_data);
+	    }
+
             break; 
     }
 
