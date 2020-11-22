@@ -253,9 +253,9 @@ void *thread_work(void *arg_data){
 
 int WOL_PACK_SEND(uint64_t mac_arg){
     struct sockaddr_in server_addr;
-	struct WOL_PACKET wol_packet;
-	int server_fd;
-	int i;
+    struct WOL_PACKET wol_packet;
+    int server_fd;
+    int i;
 
     char COMPUTER_IP[] = "192.168.150.255";
     uint64_t MAC_ADDR = 0x00D861C36D40;
@@ -288,26 +288,14 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 	for(i = 0; i < 16; i++){
 		// MAC_ADDR
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
-		//printf("%x\t", (MAC_ADDR & 0xFF0000000000) >> 40);
-
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
-		//printf("%x\t", (MAC_ADDR & 0xFF00000000) >> 32);
-
 		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
-		//printf("%x\t", (MAC_ADDR & 0xFF000000) >> 24);
-
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000) >> 16, 1);
-		//printf("%x\t", (MAC_ADDR & 0xFF0000) >> 16);
-
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
-		//printf("%x\t", (MAC_ADDR & 0xFF00) >> 8);
-
 		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
-		//printf("%x\t", MAC_ADDR & 0xFF); 
-		//printf("\n");
 	}
 
-    Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+        Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
