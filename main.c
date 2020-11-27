@@ -142,6 +142,7 @@ int main(int argc, char *argv[]){
 	}
     // *** 설정 종료 ***
 
+    // *** Server Sock init  ***
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
     if(listenfd < 0){
         Logging_out(SYSTEM, "listener socket create Error");
@@ -237,7 +238,7 @@ void *thread_work(void *arg_data){
             break;
         case 4 : // WOL 패킷 
             if(!strcmp(receive_data->data, "WOL")){
-                WOL_PACK_SEND(0); // 인자값은 MAC 주소의 값, NULL 로 넣을시 기본값
+                WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
             }
 
 	    if(send(arg->sock, receive_data,sizeof(struct Data), 0) == -1){
@@ -258,10 +259,10 @@ int WOL_PACK_SEND(uint64_t mac_arg){
     int i;
 
     char COMPUTER_IP[] = "192.168.150.255";
-    uint64_t MAC_ADDR = 0x00D861C36D40;
 
-    if(mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
-        MAC_ADDR = mac_arg;
+    if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
+        Logging_out(ERROR, "WOL arg Error", clinet_data);
+        return 0;
     }
 
     void *udp_ptr;
