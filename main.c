@@ -249,6 +249,7 @@ void *thread_work(void *arg_data){
     }
 
     close(arg->sock);
+    threads[arg->thread_num] = (pthread_t)NULL;
     pthread_exit(NULL);
 }
 
@@ -257,11 +258,12 @@ int WOL_PACK_SEND(uint64_t mac_arg){
     struct WOL_PACKET wol_packet;
     int server_fd;
     int i;
+    uint64_t MAC_ADDR = mac_arg;
 
     char COMPUTER_IP[] = "192.168.150.255";
 
     if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
-        Logging_out(ERROR, "WOL arg Error", clinet_data);
+        Logging_out(ERROR, "WOL arg Error");
         return 0;
     }
 
