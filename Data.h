@@ -5,11 +5,19 @@
 
 #define BUF_LEN 1024
 
-struct Data
-{
+//struct Data
+//{
+//    uint8_t type;
+//    uint16_t len;
+//    uint8_t Data[];
+//
+//};
+
+struct Data{
     uint8_t type;
-    char data[32];
+    uint8_t data;
 };
+
 /*
     0 : 기능 없음
     1 : 유튜브관련 

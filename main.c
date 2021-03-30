@@ -131,16 +131,18 @@ int main(int argc, char *argv[]){
 
 
     signal(SIGINT, sigint_handler);
-    signal(SIGKILL, sigint_handler);
+    signal(SIGTERM, sigint_handler);
 
     // *** Logging  설정 부분 ***
     //Logging_init(TERMINAL, 3);
 	
-	if(Logging_file_set("./UH-Server.log")){
-		fprintf(stderr, "Log file open Error\n");
-		return 1;
-	}
+    if(Logging_file_set("/opt/UH-Project-Server/UH-Server.log")){
+        fprintf(stderr, "Log file open Error\n");
+        return 1;
+    }
     // *** 설정 종료 ***
+    Logging_out(SYSTEM, "");
+    Logging_out(SYSTEM, "== Server Start ==");
 
     // *** Server Sock init  ***
     listenfd = socket(AF_INET, SOCK_STREAM, 0); // 리스너 소켓 생성
@@ -200,7 +202,6 @@ int main(int argc, char *argv[]){
                     arg->thread_num = i;
                     if(!threads[i]){
                         pthread_create(&threads[i], NULL, &thread_work, (void *)arg);
-                        //pthread_join(threads[i], NULL);
                         pthread_detach(threads[i]);
                         break;
                     }
@@ -216,33 +217,33 @@ int main(int argc, char *argv[]){
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
     uint8_t temp[514];
-    char clinet_data[514];
     struct Data* receive_data;
+    char client_data[64];
 
-    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, clinet_data, sizeof(clinet_data));
-    Logging_out(INFO, "Server : %s client connected.", clinet_data);
+    inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, client_data, sizeof(client_data));
+    Logging_out(INFO, "Server : %s client connected.", client_data);
 
     memset(temp, 0, sizeof(struct Data));
     recv(arg->sock, temp, sizeof(struct Data), 0);
     receive_data = (struct Data*)temp;
 
-    Logging_out(INFO, "%s  %d : %s",clinet_data, receive_data->type, receive_data->data);
+    //Logging_out(INFO, "%s  %d(%s) : ",clinet_data, receive_data->type, receive_data->len);
+    //Logging_out(INFO, "%s  %d : %s", client_data, receive_data->type, receive_data->data);
+    Logging_out(INFO, "%s : type(%d) ", client_data, receive_data->type);
 
     switch(receive_data->type){
         case 0 : // Sock Error
             //Logging_out(INFO, "input packet Error");
             close(arg->sock);
-            Logging_out(INFO, "Server : %s client close.", clinet_data);
+            Logging_out(INFO, "Server : %s client close.", client_data);
             break;
         case 1: // 유튜브
             break;
         case 4 : // WOL 패킷 
-            if(!strcmp(receive_data->data, "WOL")){
-                WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
-            }
+            WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
 
 	    if(send(arg->sock, receive_data,sizeof(struct Data), 0) == -1){
-            	Logging_out(ERROR, "%s WOL sock Error", clinet_data);
+            	Logging_out(ERROR, "%s WOL sock Error", client_data);
 	    }
 
             break; 
