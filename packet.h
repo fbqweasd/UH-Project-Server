@@ -5,17 +5,11 @@
 
 #define BUF_LEN 1024
 
-//struct Data
-//{
-//    uint8_t type;
-//    uint16_t len;
-//    uint8_t Data[];
-//
-//};
-
 struct Data{
     uint8_t type;
     uint8_t data;
+    uint16_t len;
+    char Data[];
 };
 
 /*

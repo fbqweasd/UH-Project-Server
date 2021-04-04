@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -Werror -lpthread -std=c99 -g
 
 all: $(PROGS)
 
-server : main.c Data.h log.c
+server : main.c packet.h log.c
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean : 
