@@ -13,19 +13,20 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include <getopt.h>
+
+#include <json.h>
 
 #include "packet.h"
 #include "log.h"
 
-#define SERVER_PORT 5657
+int SERVER_PORT = 5657;
 
 static fd_set read_fds;
 static int fd_max = 0;
+
 static pthread_t threads[5];
 int listenfd;
-static int daemon_flag;
 
 struct thread_arg
 {
@@ -39,41 +40,7 @@ int WOL_PACK_SEND(uint64_t mac_arg);
 void *thread_work(void *arg_data);
 void Send_TCP(struct Data* data);
 
-static void usage(char *progname)
-{
-    fprintf(stderr, "Usage: %s [options]\n", progname);
-    fprintf(stderr, "\nWhere \"options\" are:\n");
-
-    fprintf(stderr,
-            "	-d daemon		Start Daemon mode\n"
-            );
-    return;
-}
-
-/* Parses the command line arguments for the server */
-static int parse_options(char *progname, int argc, char *argv[])
-{
-    int opt;
-    if (argc > 2) {
-        fprintf(stderr, "Wrong number of arguments for %s\n", progname);
-        return 1;
-    }
-
-    while ((opt = getopt(argc, argv, "d")) != -1) {
-        switch (opt) {
-        case 'd':
-            daemon_flag = 1;
-            break;
-        default:
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 void sigint_handler(){
-    
     int i;
     Logging_out(SYSTEM, "-- signal 입력으로 종료--");
 
@@ -89,57 +56,66 @@ void sigint_handler(){
     exit(0);
 }
 
-int main(int argc, char *argv[]){
-
+int main(){
     struct sockaddr_in serv_addr;
-    
-    char *progname = NULL;
-    progname = (progname == strrchr(argv[0], '/')) ? progname + 1 : *argv;
-
-    if (parse_options(progname, argc, argv)) {
-        usage(progname);
-        exit(EXIT_FAILURE);
-    }
-
-    if(daemon_flag){ // 데몬 실행
-        pid_t pid;
-        pid = fork();
- 
-        if(pid == -1){
-            fprintf(stderr, "daemon fork error\n");	
-            return -1; 
-        } 
-
-        if(pid != 0){
-            exit(EXIT_SUCCESS);
-        }
-        
-        if(setsid() == -1){
-            return -1; 
-        }
-
-        open("/dev/null", O_RDWR);
-        dup(0);
-        dup(0);
-
-        Logging_init(DAEMON, 3);
-    }
-    else{
-        Logging_init(TERMINAL, 3);
-    }
-
-
+  
     signal(SIGINT, sigint_handler);
     signal(SIGTERM, sigint_handler);
 
+{   // 설정 파일에서 값 설정
+    FILE* config_fp;
+    char c;
+    char filedata[100], logpath[100];
+    int cunt = 0;
+    json_object *fileobj;
+    json_object *jsonval;
+
+    if(!(config_fp = fopen("/opt/UH-Project-Server/config.json", "r"))){
+		fprintf(stderr, "config file open Erorr\n");
+		return -1;
+	}
+
+    do{
+        c = fgetc(config_fp);
+
+        if(c != '\n' && c != '\t' && c != 32){
+            filedata[cunt] = c;
+            cunt++;
+        }
+    }while (c != 255);
+    
+    filedata[cunt - 1] = '\0';
+	fclose(config_fp);
+
+    fileobj = json_tokener_parse(filedata);
+
+    // Port 설정
+    if(json_object_object_get_ex(fileobj, "ServerPort", &jsonval)){
+        SERVER_PORT = json_object_get_int(jsonval);
+    }
+    else{
+        SERVER_PORT = 5657;
+    }
+    
     // *** Logging  설정 부분 ***
     Logging_init(TERMINAL, 3);
 	
-    if(Logging_file_set("/opt/UH-Project-Server/UH-Server.log")){
+    if(json_object_object_get_ex(fileobj, "LogPath", &jsonval)){
+        strcpy(logpath, json_object_get_string(jsonval));
+    }
+    else{
+        strcpy(logpath, "./UH-Server.log");
+    }
+    
+    if(Logging_file_set(logpath)){
         fprintf(stderr, "Log file open Error\n");
         return 1;
     }
     // *** 설정 종료 ***
+
+    json_object_put(fileobj);
+}
+    
     Logging_out(SYSTEM, "");
     Logging_out(SYSTEM, "== Server Start ==");
 

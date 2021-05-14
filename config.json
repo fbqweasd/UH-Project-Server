@@ -1,0 +1,4 @@
+{
+    "ServerPort" : 5656,
+    "LogPath" : "/opt/UH-Project-Server/UH-Server.log"
+}
