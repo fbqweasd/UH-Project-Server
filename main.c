@@ -85,7 +85,6 @@ void sigint_handler(){
 	        pthread_join(threads[i], NULL);
         }
     }
-
     close(listenfd);
     exit(0);
 }
@@ -134,7 +133,7 @@ int main(int argc, char *argv[]){
     signal(SIGTERM, sigint_handler);
 
     // *** Logging  설정 부분 ***
-    //Logging_init(TERMINAL, 3);
+    Logging_init(TERMINAL, 3);
 	
     if(Logging_file_set("/opt/UH-Project-Server/UH-Server.log")){
         fprintf(stderr, "Log file open Error\n");
@@ -216,37 +215,65 @@ int main(int argc, char *argv[]){
 
 void *thread_work(void *arg_data){
     struct thread_arg* arg = (struct thread_arg *)arg_data ;
-    uint8_t temp[514];
+    uint8_t temp[10];
     struct Data* receive_data;
+    struct sockaddr_in addr;
     char client_data[64];
+    struct msghdr *message = malloc(sizeof(struct msghdr));
 
     inet_ntop(AF_INET, &arg->client_addr.sin_addr.s_addr, client_data, sizeof(client_data));
     Logging_out(INFO, "Server : %s client connected.", client_data);
 
-    memset(temp, 0, sizeof(struct Data));
-    recv(arg->sock, temp, sizeof(struct Data), 0);
-    receive_data = (struct Data*)temp;
+    memset(temp, 0, sizeof(struct Data) + 6);
+    memset(message, 0, sizeof(*message));
+    message->msg_name = (void*)&addr;
+    message->msg_namelen = sizeof(struct sockaddr_in);
+    message->msg_iov = malloc(sizeof(struct iovec));
+    message->msg_iov->iov_base = temp;
+    message->msg_iov->iov_len = sizeof(struct Data) + sizeof(uint8_t) * 6;
+    message->msg_iovlen = 1;
 
-    //Logging_out(INFO, "%s  %d(%s) : ",clinet_data, receive_data->type, receive_data->len);
-    //Logging_out(INFO, "%s  %d : %s", client_data, receive_data->type, receive_data->data);
+    recvmsg(arg->sock, message, 0);
+    free(message->msg_iov);
+    free(message);
+
+    receive_data = (void*)temp;
     Logging_out(INFO, "%s : type(%d) ", client_data, receive_data->type);
 
     switch(receive_data->type){
         case 0 : // Sock Error
-            //Logging_out(INFO, "input packet Error");
             close(arg->sock);
             Logging_out(INFO, "Server : %s client close.", client_data);
             break;
         case 1: // 유튜브
             break;
         case 4 : // WOL 패킷 
-            WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
+        {
+            //uint64_t *receive_mac;
 
-	    if(send(arg->sock, receive_data,sizeof(struct Data), 0) == -1){
-            	Logging_out(ERROR, "%s WOL sock Error", client_data);
+            //receive_mac = (void *)&receive_data->Data;
+
+            // printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(receive_mac));
+            printf("Debug : Len : %d \n", ntohs(receive_data->len));
+            printf("Debug : Len : %d \n", receive_data->len);
+            //printf("Debug : MAC : %lld \n", receive_mac);
+            printf("Debug : MAC : %x:%x:%x:%x:%x:%x \n", receive_data->Data[0], receive_data->Data[1], receive_data->Data[2], receive_data->Data[3], receive_data->Data[4], receive_data->Data[5]);
+            
+            WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
+            // WOL_PACK_SEND(*receive_mac); // 인자값은 MAC 주소의 값
+
+            sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+
+            close(arg->sock);
+            break;
+        }
+
+
+	    if(send(arg->sock, receive_data, sizeof(struct Data), 0) == -1){
+            Logging_out(ERROR, "%s WOL sock Error", client_data);
 	    }
 
-            break; 
+        break; 
     }
 
     close(arg->sock);

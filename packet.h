@@ -6,8 +6,7 @@
 #define BUF_LEN 1024
 
 struct Data{
-    uint8_t type;
-    uint8_t data;
+    uint8_t type; // 데이터 타입
     uint16_t len;
     char Data[];
 };
