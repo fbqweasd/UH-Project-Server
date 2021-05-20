@@ -7,7 +7,7 @@
 
 struct Data{
     uint8_t type; // 데이터 타입
-    uint16_t len;
+    uint8_t len;
     char Data[];
 };
 
@@ -16,7 +16,8 @@ struct Data{
     1 : 유튜브관련 
     2 : 에어컨 관련
     3 : 서버 관련
-    4 :  WOL 데이터
+    4 : WOL 데이터
+    5 : 컴퓨터 종료
 */
 
 struct WOL_PACKET{

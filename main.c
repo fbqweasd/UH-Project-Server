@@ -225,22 +225,32 @@ void *thread_work(void *arg_data){
             break;
         case 4 : // WOL 패킷 
         {
-            //uint64_t *receive_mac;
+            uint64_t receive_mac;
+            uint8_t* mac_ptr;
+            
+            mac_ptr = (void*)&receive_data->Data; 
+            receive_mac =  ((long long)mac_ptr[0] << 40);
+            receive_mac += ((long long)mac_ptr[1] << 32);
+            receive_mac += (mac_ptr[2] << 24);
+            receive_mac += (mac_ptr[3] << 16);
+            receive_mac += (mac_ptr[4] << 8);
+            receive_mac += (mac_ptr[5]);
 
-            //receive_mac = (void *)&receive_data->Data;
-
-            // printf("Debug : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(receive_mac));
             printf("Debug : Len : %d \n", ntohs(receive_data->len));
             printf("Debug : Len : %d \n", receive_data->len);
-            //printf("Debug : MAC : %lld \n", receive_mac);
             printf("Debug : MAC : %x:%x:%x:%x:%x:%x \n", receive_data->Data[0], receive_data->Data[1], receive_data->Data[2], receive_data->Data[3], receive_data->Data[4], receive_data->Data[5]);
             
-            WOL_PACK_SEND(0x00D861C36D40); // 인자값은 MAC 주소의 값
-            // WOL_PACK_SEND(*receive_mac); // 인자값은 MAC 주소의 값
+            WOL_PACK_SEND(receive_mac); // 인자값은 MAC 주소의 값
 
+            // Server -> App
             sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 
             close(arg->sock);
+            break;
+        }
+        case 5 : // 컴퓨터 종료
+        {
+            sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
             break;
         }
 
@@ -260,23 +270,25 @@ void *thread_work(void *arg_data){
 int WOL_PACK_SEND(uint64_t mac_arg){
     struct sockaddr_in server_addr;
     struct WOL_PACKET wol_packet;
-    int server_fd;
-    int i;
-    uint64_t MAC_ADDR = mac_arg;
 
-    char COMPUTER_IP[] = "192.168.150.255";
+    char BroadCast_IP[] = "192.168.150.255";
+
+    void *udp_ptr;
+    int server_fd, i;
+    uint64_t MAC_ADDR = mac_arg;
+    int broadcastEnable=1;
 
     if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
         Logging_out(ERROR, "WOL arg Error");
         return 0;
     }
 
-    void *udp_ptr;
+
 
     memset(&server_addr, 0x00, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
 
-    server_addr.sin_addr.s_addr = inet_addr(COMPUTER_IP);
+    server_addr.sin_addr.s_addr = inet_addr(BroadCast_IP);
     server_addr.sin_port = htons(7);
 
     // 소켓 파일디스크립터 
@@ -284,16 +296,13 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 		perror("sock");
 		exit(0);
 	}
-
-	int broadcastEnable=1;
 	setsockopt(server_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 
 	udp_ptr = &wol_packet;
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
 	udp_ptr += 6;
 
-	for(i = 0; i < 16; i++){
-		// MAC_ADDR
+	for(i = 0; i < 16; i++){ // MAC_ADDR
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00000000) >> 32, 1);
 		memset(udp_ptr++, (MAC_ADDR & 0xFF000000) >> 24, 1);
@@ -301,8 +310,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
 		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
 	}
-
-        Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+    Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");
