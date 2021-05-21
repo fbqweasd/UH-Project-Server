@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+#ifndef __PACKET_H__
+#define __PACKET_H__
+
 #define MAC_ADDR_FMT "%02X:%02X:%02X:%02X:%02X:%02X"
 #define MAC_ADDR_FMT_ARGS(addr) addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
@@ -24,3 +27,5 @@ struct WOL_PACKET{
 	uint8_t Magic[6];
 	uint8_t MAC_ADDR[6 * 16];
 };
+
+#endif
