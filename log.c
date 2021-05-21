@@ -1,18 +1,30 @@
 #include "log.h"
 
+static unsigned int terminal_log; // 로그 터미널 출력 여부 설정
+static FILE* logging_fd; // 로그 출력할 파일 디스크립터
+static int logging_level;
+
+static time_t time_data_t; // 현재 시간 정보를 가지고 있는 값
+static struct tm tm; // 시간 정보를 분석한 값
+
+static unsigned int Logging_terminal_set(unsigned int data);
+static unsigned int Logging_terminal_out(const char *message);
+static unsigned int Logging_file_out(const char *message);
+static void Logging_level_set(int level);
+
+
 static char *Message_Level[] = { // Message Level 별 출력할 Level 문자열 값
     "[ System ]",
-    "[ ERROR  ]",
-    "[ WARNIN ]",
+    "[ Notice ]",
     "[  INFO  ]",
-    "[ DEBUG  ]"
+    "[ DETAIL ]"
 };
 
 /**
  * @brief Log 기록에 필요한 변수들을 초기화 하는 함수
  * 
  * @param terminal 터미널 출력 여부를 설정값, 터미널 출력시 1, 터미널 출력 미사용시 0
- * @param log_level 로깅 레벨 설정, 1 : 필수 정보 출력, 2: 세부 내용 출력, 3 : DEBUG, 그 외의 수 : 출력하지 않음
+ * @param log_level 로깅 레벨 설정, 1 : 필수 정보 출력, 2: 세부 내용 출력, 그 외의 수 : 출력하지 않음
  */
 void Logging_init(int terminal, int log_level){
     time_data_t = time(NULL);
@@ -28,12 +40,17 @@ void Logging_init(int terminal, int log_level){
  * @param filepath Log 저장 위치 값
  * @return unsigned int 에러시 1, 정상시 0 반환
  */
-unsigned int Logging_file_set(char *filepath){
+unsigned int Logging_file_set(const char *filepath){
     
-    if(!(logging_fd = fopen(filepath, "a+"))){
+    if(!(logging_fd = fopen(filepath, "a"))){
         return 1;
     }
     return 0;
+}
+
+void Logging_file_close(){
+    fclose(logging_fd);
+    return;
 }
 
 /**
@@ -43,15 +60,15 @@ unsigned int Logging_file_set(char *filepath){
  * @param message 출력할 메시지 내용
  * @return unsigned int 로그 레벨에 맞지 않으면 1, 정상적으로 출력 하면 0 반환
  */
-unsigned int Logging_out(enum log_level level, char* message, ...){
+unsigned int Logging_out(int level, char* message, ...){
 
     va_list ap;
-    char buf[1000];
+    char buf[900];
 
     char now_time[20];
-    char message_out[1026] = "\0";
+    char message_out[1024] = "\0";
 
-    if( (enum log_level)logging_level < level){
+    if(logging_level < level){
         return 1;
     }
     if(logging_level == -1){
@@ -81,7 +98,7 @@ unsigned int Logging_out(enum log_level level, char* message, ...){
  * @param data 0 : 터미널 출력 안함, 그외의 수 : 터미널 출력 사용
  * @return unsigned int 터미널 출력시 1, 터미널 출력 미사용시 0
  */
-unsigned int Logging_terminal_set(unsigned int data){
+static unsigned int Logging_terminal_set(unsigned int data){
 
     if(data){
         terminal_log = 1;
@@ -98,11 +115,12 @@ unsigned int Logging_terminal_set(unsigned int data){
  * @param message Error 출력 Message
  * @return unsigned int 정상시 0, 에러시 1 반환
  */
-unsigned int Logging_terminal_out(char *message){
+static unsigned int Logging_terminal_out(const char *message){
     
-    if(!fprintf(stdout, message)){
+    if(!fprintf(stdout,"%s", message)){
         return 1;
     }
+    fflush(stdout);
 
     return 0;
 }
@@ -113,9 +131,9 @@ unsigned int Logging_terminal_out(char *message){
  * @param message Error 출력 Message
  * @return unsigned int 정상시 0, 에러시 1 반환
  */
-unsigned int Logging_file_out(char *message){
+static unsigned int Logging_file_out(const char *message){
     
-    if(!fprintf(logging_fd, message)){
+    if(!fprintf(logging_fd,"%s", message)){
         return 1;
     }
     fflush(logging_fd);
@@ -126,14 +144,14 @@ unsigned int Logging_file_out(char *message){
 /**
  * @brief 기록할 로그 레벨을 설정하는 함수 
  * 
- * @param level 1 : 필수 정보 출력, 2: 세부 내용 출력, 3: DEBUG, 그 외의 수 : 출력하지 않음
+ * @param level 1 : 필수 정보 출력, 2: 세부 내용 출력, 그 외의 수 : 출력하지 않음
  */
-void Logging_level_set(int level){
+static void Logging_level_set(int level){
     
     switch (level)
     {
     case 1:
-        logging_level = ERROR;
+        logging_level = SYSTEM;
         break;
 
     case 2:
@@ -141,7 +159,11 @@ void Logging_level_set(int level){
         break;
 
     case 3:
-        logging_level = DEBUG;
+        logging_level = NOTICE;
+        break;
+
+    case 4:
+        logging_level = DETAIL;
         break;
     
     default:
