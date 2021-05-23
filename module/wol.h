@@ -36,7 +36,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 
 	udp_ptr = &wol_packet;
 	memset(udp_ptr, 0xFF, 6); // magic Packet Start bit
-	// udp_ptr += 6;
+	udp_ptr += 6;
 
 	for(i = 0; i < 16; i++){ // MAC_ADDR
 		memset(udp_ptr++, (MAC_ADDR & 0xFF0000000000) >> 40, 1);
