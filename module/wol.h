@@ -16,7 +16,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
     uint64_t MAC_ADDR = mac_arg;
     int broadcastEnable=1;
 
-    if(!mac_arg){ // 인자값으로 MAC 주소를 넘기면 할당
+    if(!mac_arg){ 
         Logging_out(ERROR, "WOL arg Error");
         return 0;
     }
@@ -46,7 +46,7 @@ int WOL_PACK_SEND(uint64_t mac_arg){
 		memset(udp_ptr++, (MAC_ADDR & 0xFF00) >> 8, 1);
 		memset(udp_ptr++, MAC_ADDR & 0xFF, 1);
 	}
-    Logging_out(INFO,"WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
+    Logging_out(INFO, "WOL Pack : " MAC_ADDR_FMT "\n", MAC_ADDR_FMT_ARGS(wol_packet.MAC_ADDR));
 
 	if(sendto(server_fd, &wol_packet, sizeof(wol_packet), 0,(struct sockaddr *)&server_addr, sizeof(server_addr))){
 	 	perror("send");

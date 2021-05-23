@@ -15,6 +15,7 @@ static void Logging_level_set(int level);
 
 static char *Message_Level[] = { // Message Level 별 출력할 Level 문자열 값
     "[ System ]",
+    "[  Error ]"
     "[ Notice ]",
     "[  INFO  ]",
     "[ DETAIL ]"
@@ -154,15 +155,19 @@ static void Logging_level_set(int level){
         logging_level = SYSTEM;
         break;
 
-    case 2:
-        logging_level = INFO;
+   case 2:
+        logging_level = ERROR;
         break;
 
     case 3:
-        logging_level = NOTICE;
+        logging_level = INFO;
         break;
 
     case 4:
+        logging_level = NOTICE;
+        break;
+
+    case 5:
         logging_level = DETAIL;
         break;
     

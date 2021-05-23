@@ -99,7 +99,7 @@ int main(){
     }
     
     // *** Logging  설정 부분 ***
-    Logging_init(TERMINAL, 3);
+    Logging_init(TERMINAL, 5);
 	
     if(json_object_object_get_ex(fileobj, "LogPath", &jsonval)){
         strcpy(logpath, json_object_get_string(jsonval));
@@ -236,11 +236,7 @@ void *thread_work(void *arg_data){
             receive_mac += (mac_ptr[3] << 16);
             receive_mac += (mac_ptr[4] << 8);
             receive_mac += (mac_ptr[5]);
-
-            printf("Debug : Len : %d \n", ntohs(receive_data->len));
-            printf("Debug : Len : %d \n", receive_data->len);
-            printf("Debug : MAC : %x:%x:%x:%x:%x:%x \n", receive_data->Data[0], receive_data->Data[1], receive_data->Data[2], receive_data->Data[3], receive_data->Data[4], receive_data->Data[5]);
-            
+                    
             WOL_PACK_SEND(receive_mac); // 인자값은 MAC 주소의 값
 
             // Server -> App
