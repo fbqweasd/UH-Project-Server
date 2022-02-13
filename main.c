@@ -241,21 +241,52 @@ void *thread_work(void *arg_data){
 
             // Server -> App
             sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-
             close(arg->sock);
             break;
         }
         case 5 : // 컴퓨터 종료
         {
+            struct sockaddr_in pc_addr;
+            struct Data PC_Off_Packet;
+            int broadcastEnable=1;
+
+            char PC_IP[] = "192.168.150.8";
+            int PC_Port = 15656;
+            int PcOff_fd;
+
+            memset(&PcOff_fd, 0x00, sizeof(pc_addr));
+            pc_addr.sin_family = AF_INET;
+
+            pc_addr.sin_addr.s_addr = inet_addr(PC_IP);
+            pc_addr.sin_port = htons(PC_Port);
+            // pc_addr.sin_port = (PC_Port);
+
+            // 소켓 파일디스크립터 
+            if((PcOff_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
+                perror("sock");
+                exit(0);
+            }
+            setsockopt(PcOff_fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+
+            PC_Off_Packet.type = 5;
+            PC_Off_Packet.len = 0;
+
+            Logging_out(INFO, "Pc Off packet Send");
+
+            if(sendto(PcOff_fd, &PC_Off_Packet, sizeof(struct Data), 0,(struct sockaddr *)&pc_addr, sizeof(struct sockaddr_in))){
+                perror("send");
+            }
+            close(PcOff_fd);
+
+            //Server -> App Echo
             sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+            close(arg->sock);
             break;
         }
-
 
 	    if(send(arg->sock, receive_data, sizeof(struct Data), 0) == -1){
             Logging_out(ERROR, "%s WOL sock Error", client_data);
 	    }
-
         break; 
     }
 
