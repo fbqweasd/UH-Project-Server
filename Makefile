@@ -8,7 +8,7 @@ Lib = -l json-c -L /opt/ext/json-c/lib -Wl,-rpath,/opt/ext/json-c/lib/
 
 all: $(PROGS)
 
-server : main.c packet.h log.c module/wol.h
+server : main.c module/packet.h module/log.c module/log.h module/wol.h
 	$(CC) -o $@ $^ $(CFLAGS) $(IncludePath) $(Lib)
 
 clean : 
