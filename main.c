@@ -182,7 +182,7 @@ int main(){
                         break;
                     }
                 }
-		// 비어어있는 Thrad 큐가 없는 상황에 대한 예외처리 필요
+		        // 비어어있는 Thrad 큐가 없는 상황에 대한 예외처리 필요
             }
         }
     }
@@ -230,6 +230,7 @@ void *thread_work(void *arg_data){
             uint64_t receive_mac;
             uint8_t* mac_ptr;
             
+            // 클라이언트로 전달받은 MAX 주소 처리
             mac_ptr = (void*)&receive_data->Data; 
             receive_mac =  ((long long)mac_ptr[0] << 40);
             receive_mac += ((long long)mac_ptr[1] << 32);
@@ -238,9 +239,9 @@ void *thread_work(void *arg_data){
             receive_mac += (mac_ptr[4] << 8);
             receive_mac += (mac_ptr[5]);
                     
-            WOL_PACK_SEND(receive_mac); // 인자값은 MAC 주소의 값
+            WOL_PACK_SEND(receive_mac); 
 
-            // Server -> App
+            // Server -> App Echo
             sendto(arg->sock, receive_data, sizeof(struct Data) + sizeof(uint8_t) * 6, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
             close(arg->sock);
             break;
